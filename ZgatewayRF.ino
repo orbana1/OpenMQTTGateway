@@ -53,27 +53,42 @@ boolean RFtoMQTT(){
       taskMessage = taskMessage + xPortGetCoreID();
       trc(taskMessage);
     #endif
+    StaticJsonBuffer<200> jsonBuffer;
+    JsonObject& RFdata = jsonBuffer.createObject();
     unsigned long MQTTvalue = 0;
-    String MQTTprotocol;
-    String MQTTbits;
-    String MQTTlength;
     MQTTvalue = mySwitch.getReceivedValue();
-    MQTTprotocol = String(mySwitch.getReceivedProtocol());
-    MQTTbits = String(mySwitch.getReceivedBitlength());
-    MQTTlength = String(mySwitch.getReceivedDelay());
+    RFdata["protocol"] = mySwitch.getReceivedProtocol();
+    RFdata["bits"] = mySwitch.getReceivedBitlength();
+    RFdata["length"] = mySwitch.getReceivedDelay();
     mySwitch.resetAvailable();
     if (!isAduplicate(MQTTvalue) && MQTTvalue!=0) {// conditions to avoid duplications of RF -->MQTT
-        trc(F("Adv data RFtoMQTT"));
-        client.publish(subjectRFtoMQTTprotocol,(char *)MQTTprotocol.c_str());
-        client.publish(subjectRFtoMQTTbits,(char *)MQTTbits.c_str());    
-        client.publish(subjectRFtoMQTTlength,(char *)MQTTlength.c_str());    
-        trc(F("Sending RFtoMQTT"));
-        String value = String(MQTTvalue);
-        trc(value);
-        boolean result = client.publish(subjectRFtoMQTT,(char *)value.c_str());
+        #ifdef JSON
+          trc(F("Json data RFtoMQTT"));
+          char JSONmessageBuffer[100];
+          RFdata.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
+          trc(F("Sending RFtoMQTT(json)"));
+          #ifdef valueAsASubject
+            trc(F("Value as a subject"));
+            String Subject = subjectRFtoMQTT;
+            Subject +=  '/';
+            Subject += String(MQTTvalue);
+            boolean result = client.publish((char *)Subject.c_str(),JSONmessageBuffer);
+          #else
+            trc(F("Full json pub"));
+            RFdata["value"] = MQTTvalue;
+            boolean result = client.publish(subjectRFtoMQTT,JSONmessageBuffer);
+          #endif
+        #else
+          trc(F("Adv data RFtoMQTT"));
+          RFdata["value"] = MQTTvalue;
+          client.publish(subjectRFtoMQTTprotocol,RFdata["protocol"].as<const char*>());
+          client.publish(subjectRFtoMQTTbits,RFdata["bits"].as<const char*>());    
+          client.publish(subjectRFtoMQTTlength,RFdata["length"].as<const char*>());    
+          boolean result = client.publish(subjectRFtoMQTT,RFdata["value"].as<const char*>());
+        #endif
         if (repeatRFwMQTT){
             trc(F("Publish RF for repeat"));
-            client.publish(subjectMQTTtoRF,(char *)value.c_str());
+            client.publish(subjectMQTTtoRF,RFdata["value"].as<const char*>());
         }
         return result;
     } 
