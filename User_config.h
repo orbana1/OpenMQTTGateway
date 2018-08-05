@@ -39,7 +39,7 @@ char mqtt_pass[20] = "your_password"; // not compulsory only if your broker need
 char mqtt_server[40] = "192.168.0.122";
 char mqtt_port[6] = "1883";
 
-#define Gateway_Name "OpenMQTTGateway"
+#define Gateway_Name "OMG2"
 #define Base_Topic "home/"
 #define version_Topic  Base_Topic Gateway_Name "/version"
 #define will_Topic  Base_Topic Gateway_Name "/LWT"
@@ -62,7 +62,7 @@ char mqtt_port[6] = "1883";
 // Update these with values suitable for your network.
 #if defined(ESP32) || defined(ESPWifiManualSetup) // for nodemcu, weemos and esp8266
   #define wifi_ssid "honeypot"
-  #define wifi_password "maukope13"
+  #define wifi_password "wifi_password"
 #else // for arduino + W5100
   const byte mac[] = {  0xDE, 0xED, 0xBA, 0xFE, 0x54, 0x95 }; //W5100 ethernet shield mac adress
 #endif
